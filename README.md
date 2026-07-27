@@ -22,6 +22,7 @@ PulseCRM will help businesses:
 ### Frontend
 
 - Next.js
+- Tailwind CSS
 - TypeScript
 - Vercel
 
@@ -58,3 +59,43 @@ PulseCRM/
 │   └── requirements.md
 ├── .gitignore
 └── README.md
+```
+
+## Runnable Prototype
+
+Run it from the frontend directory:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+The prototype includes seeded conversations, per-user unread state, needs-reply filtering, temporary handled-by presence, takeover warnings, replies, simulated incoming messages, failed sends, retries, message selection, linked CRM work, archive/spam controls, and local refresh persistence.
+
+## Frontend Feature Structure
+
+The unified inbox prototype follows a feature-first layout, similar to the alumni app:
+
+```text
+frontend/
+├── app/
+│   ├── page.jsx
+│   └── dev/inbox/page.jsx
+└── features/inbox/
+    ├── api/
+    ├── components/
+    ├── data/
+    ├── hooks/
+    ├── pages/
+    ├── services/
+    └── utils/
+```
+
+The normal inbox route stays thin and renders `features/inbox/pages/UnifiedInboxPage.jsx`. Mock persistence and broadcast behavior live in `services/`, mock seed data lives in `data/`, and page state/mutations live in hooks.
