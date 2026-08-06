@@ -2,19 +2,35 @@
 
 ## Overview
 
-PulseCRM will use PostgreSQL through Supabase. SQLAlchemy will manage the database models, while Alembic will manage migrations.
+PulseCRM will use PostgreSQL through Supabase. SQLAlchemy will manage application models, and Alembic will manage migrations.
 
-UUIDs will be used as primary keys, and most tables will include:
+UUIDs will be used as primary keys. Most tables should include:
 
 - `id`
 - `created_at`
 - `updated_at`
 
-## Main Tables
+Every organisation-owned record must either include `organization_id` directly or clearly inherit organisation scope through a required parent record. Backend queries must always enforce organisation boundaries.
 
-### Users
+## Tenancy, Users, Roles, And Permissions
 
-Stores employee accounts.
+### organizations
+
+Stores tenant organisations.
+
+```text
+id
+name
+slug
+created_at
+updated_at
+archived_at
+archived_by_user_id
+```
+
+### users
+
+Stores login accounts. Users are not scoped to one organisation by this table alone.
 
 ```text
 id
@@ -22,15 +38,28 @@ first_name
 last_name
 email
 password_hash
-role_id
-team_id
 is_active
+last_login_at
 created_at
 updated_at
+```
 
-### Roles
+### organization_memberships
 
-Stores user roles and permissions.
+Connects users to organisations.
+
+```text
+id
+organization_id
+user_id
+membership_status
+created_at
+updated_at
+```
+
+### roles
+
+Stores role definitions such as CEO, CRM Admin, Sales Representative, and Inbox Agent.
 
 ```text
 id
@@ -40,306 +69,484 @@ created_at
 updated_at
 ```
 
-Example roles:
+### permissions
 
-- Administrator
-- Manager
-- Sales Employee
-- Support Employee
-
-### Customers
-
-Stores unified customer profiles.
+Stores permission concepts such as `inbox.view`, `inbox.reply`, `customers.merge`, and `reports.company_view`.
 
 ```text
 id
-first_name
-last_name
-email
-phone_number
-source_id
-owner_id
-company_id
-status
-preferred_channel
+key
+description
 created_at
 updated_at
 ```
 
-### Companies
+### membership_roles
 
-Stores business customer records.
+Allows one user membership to have several roles.
 
 ```text
 id
+organization_membership_id
+role_id
+created_at
+updated_at
+```
+
+### role_permissions
+
+Connects roles to permissions.
+
+```text
+id
+role_id
+permission_id
+created_at
+updated_at
+```
+
+Formal team support is deferred and is not required in the first MVP.
+
+## Customers And Companies
+
+### customers
+
+Stores individual customer profiles. A customer can exist with only a provider identity before phone or email is known.
+
+```text
+id
+organization_id
+first_name
+last_name
+display_name
+preferred_channel
+created_by_user_id
+created_at
+updated_at
+archived_at
+archived_by_user_id
+```
+
+### customer_contact_methods
+
+Stores multiple phone numbers and email addresses.
+
+```text
+id
+organization_id
+customer_id
+method_type
+value
+normalized_value
+is_primary
+is_verified
+created_at
+updated_at
+```
+
+### customer_identities
+
+Stores provider and external identities such as WhatsApp, Instagram, Facebook, website visitor IDs, trusted customer references, and order references.
+
+```text
+id
+organization_id
+customer_id
+identity_type
+provider
+original_value
+normalized_value
+is_verified
+verification_method
+created_at
+updated_at
+```
+
+### customer_addresses
+
+Stores multiple addresses for a customer.
+
+```text
+id
+organization_id
+customer_id
+address_type
+line_1
+line_2
+city
+state
+country
+postal_code
+is_primary
+created_at
+updated_at
+```
+
+### companies
+
+Stores company records separately from individual customers.
+
+```text
+id
+organization_id
 name
 industry
 website
-email
-phone_number
-owner_id
-status
+created_by_user_id
+created_at
+updated_at
+archived_at
+archived_by_user_id
+```
+
+### company_contacts
+
+Connects companies to individual customers.
+
+```text
+id
+organization_id
+company_id
+customer_id
+role_or_title
+is_primary
 created_at
 updated_at
 ```
 
-### Customer Sources
+### customer_sources
 
-Stores where customers and leads came from.
+Stores source definitions such as WhatsApp, Instagram, Facebook, website, CSV, store, and manual entry.
 
 ```text
 id
+organization_id
 name
-channel_type
-description
-is_active
+source_type
+created_at
+updated_at
 ```
 
-Examples:
+### communication_preferences
 
-- Website
-- WhatsApp
-- Instagram
-- Facebook
-- CSV
-- Manual Entry
-- Physical Store
-
-### Conversations
-
-Stores customer communication threads.
+Stores consent and preferred-contact settings.
 
 ```text
 id
+organization_id
 customer_id
 channel
-assigned_user_id
+is_allowed
+preference_notes
+created_at
+updated_at
+```
+
+## Duplicate Handling
+
+### duplicate_suggestions
+
+Stores possible duplicate suggestions. Weak evidence may create a suggestion but must not auto-merge records.
+
+```text
+id
+organization_id
+source_customer_id
+candidate_customer_id
+evidence_type
+evidence_summary
+confidence_level
 status
-subject
-started_at
+reviewed_by_user_id
+reviewed_at
+created_at
+updated_at
+```
+
+### customer_merge_history
+
+Stores merge and reverse-merge history.
+
+```text
+id
+organization_id
+primary_customer_id
+merged_customer_id
+merged_by_user_id
+merged_at
+merge_reason
+reverse_merge_data
+reversed_by_user_id
+reversed_at
+created_at
+updated_at
+```
+
+## Conversations And Messages
+
+### conversations
+
+Stores ongoing customer communication threads. Conversations do not have permanent owner fields or Open/Pending/Resolved/Closed workflow states.
+
+```text
+id
+organization_id
+customer_id
+customer_identity_id
+integration_id
+channel
+external_thread_id
 last_message_at
+last_inbound_message_at
+last_outbound_message_at
+is_archived
+is_spam
 created_at
 updated_at
 ```
 
-### Messages
+### conversation_user_states
 
-Stores individual messages within conversations.
+Stores per-user read state for each conversation.
 
 ```text
 id
+organization_id
 conversation_id
-sender_type
-content
-message_type
-external_message_id
-sent_at
-is_read
-created_at
-```
-
-### Leads
-
-Stores potential customers.
-
-```text
-id
-customer_id
-first_name
-last_name
-email
-phone_number
-source_id
-assigned_user_id
-status
-score
-interest
-lost_reason
+user_id
+last_read_message_id
+last_read_at
+marked_unread_at
 created_at
 updated_at
 ```
 
-### Sales Pipelines
+### messages
 
-Stores available sales pipelines.
+Stores inbound, outbound, and internal-note messages.
 
 ```text
 id
-name
-description
-is_default
-is_active
+organization_id
+conversation_id
+direction
+message_type
+content
+sender_type
+sender_user_id
+sender_name
+external_message_id
+delivery_status
+sent_at
+created_at
+updated_at
 ```
 
-### Pipeline Stages
+### message_attachments
 
-Stores stages within a sales pipeline.
+Stores message attachment metadata and Supabase Storage references.
 
 ```text
 id
-pipeline_id
-name
-position
-probability
-stage_type
+organization_id
+message_id
+file_name
+file_type
+storage_path
+size_bytes
+created_at
+updated_at
 ```
 
-Example stages:
+### message_record_links
 
-- New Opportunity
-- Qualification
-- Proposal
-- Negotiation
-- Won
-- Lost
-
-### Opportunities
-
-Stores potential sales.
+Links exact source messages to CRM work records.
 
 ```text
 id
-name
+organization_id
+message_id
+record_type
+record_id
+created_by_user_id
+created_at
+```
+
+Temporary handling presence may live in Redis or another realtime presence store. It should expire automatically and should not create a permanent conversation-owner field.
+
+## Sales And Work Records
+
+### leads
+
+Stores commercial interest linked to an existing customer or company.
+
+```text
+id
+organization_id
 customer_id
+company_id
+source_conversation_id
+title
+status
+owner_user_id
+created_by_user_id
+converted_opportunity_id
+converted_at
+created_at
+updated_at
+archived_at
+archived_by_user_id
+```
+
+### opportunities
+
+Stores pipeline opportunities.
+
+```text
+id
+organization_id
+customer_id
+company_id
 lead_id
-pipeline_id
-stage_id
-owner_id
+title
+stage
 expected_value
 currency
 expected_close_date
+owner_user_id
 status
 lost_reason
 created_at
 updated_at
+archived_at
+archived_by_user_id
 ```
 
-### Tasks
+### tasks
 
-Stores tasks and follow-up activities.
+Stores individual assignments and follow-ups.
 
 ```text
 id
+organization_id
 title
 description
-assigned_user_id
+assignee_user_id
+created_by_user_id
 customer_id
+company_id
 lead_id
 opportunity_id
-priority
+support_case_id
+source_conversation_id
 status
-due_date
-completed_at
+priority
+due_at
 created_at
 updated_at
+archived_at
+archived_by_user_id
 ```
 
-### Support Cases
+### support_cases
 
-Stores complaints and service requests.
+Stores complaint and service-request work. Case workflow states belong here, not on conversations.
 
 ```text
 id
+organization_id
 case_number
 customer_id
-assigned_user_id
-subject
-description
-priority
-status
-resolution
-created_at
-updated_at
-```
-
-### Notifications
-
-Stores notifications sent to users.
-
-```text
-id
-user_id
+company_id
+source_conversation_id
 title
-message
-notification_type
-is_read
+description
+status
+priority
+assignee_user_id
+created_by_user_id
 created_at
+updated_at
+archived_at
+archived_by_user_id
 ```
 
-### Integrations
+## Integrations, Imports, And Audit
 
-Stores connected communication platforms.
+### integrations
 
 ```text
 id
-name
-type
+organization_id
+provider
+display_name
 status
-configuration
-last_success_at
-last_failure_at
+connected_by_user_id
+created_at
+updated_at
+archived_at
+archived_by_user_id
+```
+
+### integration_events
+
+Persists inbound webhook and integration processing events for idempotency, review, and replay.
+
+```text
+id
+organization_id
+integration_id
+provider_event_id
+event_type
+payload_storage_path
+status
+idempotency_key
+attempt_count
+last_error
+received_at
+processed_at
 created_at
 updated_at
 ```
 
-### Audit Logs
-
-Stores important system actions.
+### imports
 
 ```text
 id
-user_id
+organization_id
+source_type
+file_storage_path
+status
+created_by_user_id
+created_at
+updated_at
+```
+
+### import_rows
+
+```text
+id
+organization_id
+import_id
+row_number
+raw_data
+status
+error_message
+created_record_type
+created_record_id
+created_at
+updated_at
+```
+
+### audit_logs
+
+```text
+id
+organization_id
+actor_user_id
 action
 record_type
 record_id
-previous_values
-new_values
+metadata
 created_at
 ```
-
-## Main Relationships
-
-```text
-A user may manage many customers.
-A customer may belong to one company.
-A customer may have many conversations.
-A conversation may contain many messages.
-A customer may have many leads.
-A lead may become a sales opportunity.
-A pipeline may contain many stages.
-A customer may have many tasks and support cases.
-```
-
-## MVP Tables
-
-The MVP should initially include:
-
-```text
-users
-roles
-customers
-companies
-customer_sources
-conversations
-messages
-leads
-sales_pipelines
-pipeline_stages
-opportunities
-tasks
-support_cases
-notifications
-integrations
-audit_logs
-```
-
-## Notes
-
-The database structure may change during implementation after the team confirms:
-
-- Authentication method.
-- User roles and permissions.
-- Sales pipeline stages.
-- Customer duplicate-matching rules.
-- WhatsApp and Meta integrations.
-- Required reports.

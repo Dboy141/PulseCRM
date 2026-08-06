@@ -4,26 +4,27 @@
 
 The PulseCRM frontend will communicate with the FastAPI backend through REST API endpoints.
 
-All protected endpoints must require authentication and check the user’s permissions before returning or changing data.
-
 The main API prefix will be:
 
 ```text
 /api
 ```
 
-## General Requirements
+## Global API Rules
 
-The API should:
+Every protected endpoint must:
 
-- Accept and return JSON data.
-- Validate all incoming data.
-- Return clear success and error messages.
+- Authenticate the user.
+- Resolve the user's organisation membership.
+- Check permissions.
+- Scope reads and writes by organisation.
+- Validate record visibility.
+- Return clear success and error responses.
 - Use appropriate HTTP status codes.
-- Support searching, filtering, sorting, and pagination.
-- Protect private endpoints.
-- Record important changes in the audit log.
-- Prevent users from accessing records outside their permissions.
+- Support pagination where lists can grow.
+- Audit important actions.
+
+FastAPI owns authentication. Supabase Auth is not the primary authentication service.
 
 ## Authentication
 
@@ -36,349 +37,207 @@ POST /api/auth/reset-password
 GET  /api/auth/me
 ```
 
-These endpoints will allow users to log in, log out, reset passwords, refresh authentication, and retrieve their account information.
-
-## Users
+## Organisations, Users, Roles, And Permissions
 
 ```text
-GET    /api/users
-POST   /api/users
-GET    /api/users/{user_id}
-PUT    /api/users/{user_id}
-DELETE /api/users/{user_id}
+GET  /api/organizations
+GET  /api/organizations/{organization_id}
+GET  /api/users
+POST /api/users
+GET  /api/users/{user_id}
+PUT  /api/users/{user_id}
+POST /api/users/{user_id}/activate
+POST /api/users/{user_id}/deactivate
+GET  /api/roles
+POST /api/memberships/{membership_id}/roles
+DELETE /api/memberships/{membership_id}/roles/{role_id}
+GET  /api/permissions
 ```
 
-The API must allow authorised administrators to:
+Users may have several roles within an organisation membership. Formal team management is deferred for the first MVP.
 
-- View users.
-- Create users.
-- Update user information.
-- Activate or deactivate users.
-- Assign roles and teams.
-
-## Customers
+## Customers And Companies
 
 ```text
-GET    /api/customers
-POST   /api/customers
-GET    /api/customers/{customer_id}
-PUT    /api/customers/{customer_id}
-DELETE /api/customers/{customer_id}
-GET    /api/customers/{customer_id}/timeline
+GET  /api/customers
+POST /api/customers
+GET  /api/customers/{customer_id}
+PUT  /api/customers/{customer_id}
+POST /api/customers/{customer_id}/archive
+POST /api/customers/{customer_id}/restore
+GET  /api/customers/{customer_id}/timeline
+POST /api/customers/{customer_id}/contact-methods
+POST /api/customers/{customer_id}/identities
+POST /api/customers/{customer_id}/addresses
+GET  /api/companies
+POST /api/companies
+GET  /api/companies/{company_id}
+PUT  /api/companies/{company_id}
+POST /api/companies/{company_id}/archive
+POST /api/companies/{company_id}/restore
+POST /api/companies/{company_id}/contacts
 ```
 
-The customer list endpoint should support filters such as:
+Customer APIs must support channel-only customer profiles, progressive identity collection, multiple contact methods, provider identities, and company-contact relationships.
+
+Customer list filters may include:
 
 ```text
 search
-status
 source
-owner
 company
+created_from
+created_to
+archived
 page
 page_size
 ```
 
-## Customer Duplicate Management
+Lead and Opportunity must not be used as customer lifecycle filters.
+
+## Duplicate Handling
 
 ```text
-GET  /api/customers/duplicates
-POST /api/customers/duplicates/check
+GET  /api/customers/duplicate-suggestions
+POST /api/customers/duplicate-suggestions/{suggestion_id}/dismiss
 POST /api/customers/merge
+POST /api/customers/merges/{merge_id}/reverse
+GET  /api/customers/{customer_id}/merge-history
 ```
 
-The API must allow authorised users to:
+CRM Admin permission is required for final merge and reverse merge. Weak evidence may create suggestions only.
 
-- Check for possible duplicate customers.
-- Review duplicate suggestions.
-- Merge customer records.
-- Preserve related customer information during a merge.
-
-## Companies
-
-```text
-GET    /api/companies
-POST   /api/companies
-GET    /api/companies/{company_id}
-PUT    /api/companies/{company_id}
-DELETE /api/companies/{company_id}
-```
-
-## Conversations
+## Unified Inbox
 
 ```text
 GET  /api/conversations
-POST /api/conversations
 GET  /api/conversations/{conversation_id}
-PUT  /api/conversations/{conversation_id}
-POST /api/conversations/{conversation_id}/assign
-POST /api/conversations/{conversation_id}/resolve
-```
-
-The conversation list should support filters for:
-
-```text
-status
-channel
-assigned_user
-customer
-unread
-```
-
-## Messages
-
-```text
 GET  /api/conversations/{conversation_id}/messages
 POST /api/conversations/{conversation_id}/messages
+POST /api/conversations/{conversation_id}/internal-notes
+POST /api/conversations/{conversation_id}/read-state
+POST /api/conversations/{conversation_id}/mark-unread
+POST /api/conversations/{conversation_id}/handling/start
+POST /api/conversations/{conversation_id}/handling/heartbeat
+POST /api/conversations/{conversation_id}/handling/stop
+POST /api/conversations/{conversation_id}/archive
+POST /api/conversations/{conversation_id}/restore
+POST /api/conversations/{conversation_id}/spam
+POST /api/conversations/{conversation_id}/remove-spam
+POST /api/conversations/{conversation_id}/selected-messages/work-records
+POST /api/conversations/{conversation_id}/selected-messages/links
 ```
 
-The API must support sending and retrieving messages connected to a conversation.
+Exact endpoint names may be refined, but the behaviour must exist.
+
+Conversation list filters may include:
+
+```text
+channel
+search
+unread
+needs_reply
+archived
+spam
+page
+page_size
+```
+
+Conversation APIs must not include permanent assignment endpoints or workflow-state endpoints. There should be no conversation assign endpoint and no resolve-conversation endpoint.
+
+Inbox APIs must support:
+
+- Per-user read state.
+- Temporary handling presence.
+- Reply messages.
+- Internal notes.
+- Creating tasks, leads, opportunities, support cases, and internal notes from selected exact messages.
+- Linking selected exact messages to existing work records.
+- Source-message traceability.
+
+The exact realtime transport for messages, read state, presence, and linked-work updates remains an engineering decision.
 
 ## Leads
 
 ```text
-GET    /api/leads
-POST   /api/leads
-GET    /api/leads/{lead_id}
-PUT    /api/leads/{lead_id}
-DELETE /api/leads/{lead_id}
-POST   /api/leads/{lead_id}/assign
-POST   /api/leads/{lead_id}/qualify
-POST   /api/leads/{lead_id}/convert
-POST   /api/leads/{lead_id}/mark-lost
+GET  /api/leads
+POST /api/leads
+GET  /api/leads/{lead_id}
+PUT  /api/leads/{lead_id}
+POST /api/leads/{lead_id}/archive
+POST /api/leads/{lead_id}/restore
+POST /api/leads/{lead_id}/convert
 ```
 
-The leads endpoint should support filters such as:
+Leads must reference an existing customer or company. Conversion must keep the original lead, mark it Converted, create an opportunity, and reuse the same customer or company.
 
-```text
-search
-status
-source
-assigned_user
-score
-created_from
-created_to
-```
-
-## Sales Pipelines
-
-```text
-GET    /api/pipelines
-POST   /api/pipelines
-GET    /api/pipelines/{pipeline_id}
-PUT    /api/pipelines/{pipeline_id}
-DELETE /api/pipelines/{pipeline_id}
-```
-
-## Pipeline Stages
-
-```text
-GET    /api/pipelines/{pipeline_id}/stages
-POST   /api/pipelines/{pipeline_id}/stages
-PUT    /api/pipeline-stages/{stage_id}
-DELETE /api/pipeline-stages/{stage_id}
-```
+Lead scoring, automatic assignment, and team assignment are not required MVP API behaviours.
 
 ## Opportunities
 
 ```text
-GET    /api/opportunities
-POST   /api/opportunities
-GET    /api/opportunities/{opportunity_id}
-PUT    /api/opportunities/{opportunity_id}
-DELETE /api/opportunities/{opportunity_id}
-POST   /api/opportunities/{opportunity_id}/move
-POST   /api/opportunities/{opportunity_id}/mark-won
-POST   /api/opportunities/{opportunity_id}/mark-lost
+GET  /api/opportunities
+POST /api/opportunities
+GET  /api/opportunities/{opportunity_id}
+PUT  /api/opportunities/{opportunity_id}
+POST /api/opportunities/{opportunity_id}/archive
+POST /api/opportunities/{opportunity_id}/restore
+POST /api/opportunities/{opportunity_id}/mark-won
+POST /api/opportunities/{opportunity_id}/mark-lost
 ```
 
 ## Tasks
 
 ```text
-GET    /api/tasks
-POST   /api/tasks
-GET    /api/tasks/{task_id}
-PUT    /api/tasks/{task_id}
-DELETE /api/tasks/{task_id}
-POST   /api/tasks/{task_id}/complete
+GET  /api/tasks
+POST /api/tasks
+GET  /api/tasks/{task_id}
+PUT  /api/tasks/{task_id}
+POST /api/tasks/{task_id}/archive
+POST /api/tasks/{task_id}/restore
+POST /api/tasks/{task_id}/complete
 ```
 
-The task list should support filters for:
-
-```text
-status
-priority
-assigned_user
-due_from
-due_to
-overdue
-```
+Tasks are assigned to individuals in the first MVP. Normal users see tasks assigned to them and tasks they created. CEO and CRM Admin may see organisation-wide tasks.
 
 ## Support Cases
 
 ```text
-GET    /api/cases
-POST   /api/cases
-GET    /api/cases/{case_id}
-PUT    /api/cases/{case_id}
-DELETE /api/cases/{case_id}
-POST   /api/cases/{case_id}/assign
-POST   /api/cases/{case_id}/resolve
-POST   /api/cases/{case_id}/reopen
+GET  /api/support-cases
+POST /api/support-cases
+GET  /api/support-cases/{case_id}
+PUT  /api/support-cases/{case_id}
+POST /api/support-cases/{case_id}/archive
+POST /api/support-cases/{case_id}/restore
 ```
 
-## Notifications
+Support cases may use Open, In Progress, Waiting on Customer, and Resolved states. These states must not be applied to conversations.
+
+## Imports And Integrations
 
 ```text
-GET  /api/notifications
-POST /api/notifications/{notification_id}/read
-POST /api/notifications/read-all
-```
-
-## Reports
-
-```text
-GET /api/reports/customer-sources
-GET /api/reports/lead-conversions
-GET /api/reports/sales-pipeline
-GET /api/reports/team-performance
-GET /api/reports/tasks
-GET /api/reports/cases
-```
-
-Reports should support date, employee, team, source, channel, and status filters.
-
-## Integrations
-
-```text
-GET    /api/integrations
-POST   /api/integrations
-GET    /api/integrations/{integration_id}
-PUT    /api/integrations/{integration_id}
-DELETE /api/integrations/{integration_id}
-POST   /api/integrations/{integration_id}/test
-```
-
-## Webhooks
-
-```text
-POST /api/webhooks/website
-POST /api/webhooks/whatsapp
-POST /api/webhooks/meta
-```
-
-Webhook endpoints must:
-
-- Validate incoming requests.
-- Prevent duplicate event processing.
-- Store received events.
-- Send events to the background worker.
-- Retry temporary failures.
-- Record unsuccessful events.
-
-## CSV Imports
-
-```text
-POST /api/imports/csv
+GET  /api/imports
+POST /api/imports
 GET  /api/imports/{import_id}
-POST /api/imports/{import_id}/confirm
-GET  /api/imports/{import_id}/errors
+GET  /api/imports/{import_id}/rows
+GET  /api/integrations
+POST /api/integrations
+GET  /api/integrations/{integration_id}/events
+POST /api/integrations/events/{event_id}/replay
 ```
 
-The CSV import process should support:
+Webhook endpoints must support verification, idempotency, persistence, retry tracking, and review of failed events. Exact webhook events and retry policies remain unresolved.
 
-- File upload.
-- Column mapping.
-- Data validation.
-- Duplicate detection.
-- Import preview.
-- Import confirmation.
-- Error reporting.
-
-## Files
+## Dashboard And Reports
 
 ```text
-POST   /api/files
-GET    /api/files/{file_id}
-DELETE /api/files/{file_id}
+GET /api/dashboard
+GET /api/reports
+POST /api/reports/export
 ```
 
-## Audit Logs
+Dashboard and report responses must follow organisation boundaries and the viewer's permissions. Unsupported widgets must be hidden rather than populated with invented data.
 
-```text
-GET /api/audit-logs
-GET /api/audit-logs/{audit_log_id}
-```
+Website telemetry must only appear when a website-tracking integration exists. Revenue must only appear when reliable order, payment, or approved won-opportunity data exists.
 
-Audit-log endpoints must only be accessible to authorised users.
-
-## Dashboard
-
-```text
-GET /api/dashboard/summary
-GET /api/dashboard/recent-activity
-GET /api/dashboard/upcoming-tasks
-```
-
-## Standard Success Response
-
-```json
-{
-  "success": true,
-  "message": "Customer created successfully",
-  "data": {}
-}
-```
-
-## Standard Error Response
-
-```json
-{
-  "success": false,
-  "message": "Unable to complete the request",
-  "errors": []
-}
-```
-
-## Common HTTP Status Codes
-
-```text
-200 OK
-201 Created
-204 No Content
-400 Bad Request
-401 Unauthorized
-403 Forbidden
-404 Not Found
-409 Conflict
-422 Validation Error
-500 Internal Server Error
-```
-
-## Pagination Response
-
-```json
-{
-  "success": true,
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "page_size": 20,
-    "total_items": 100,
-    "total_pages": 5
-  }
-}
-```
-
-## Notes
-
-The final endpoint names may change during backend implementation.
-
-Before implementation, the team must confirm:
-
-- The authentication method.
-- The exact roles and permissions.
-- Whether messages will be sent directly through the CRM.
-- The selected WhatsApp and Meta APIs.
-- The required reports.
-- The customer identity-matching rules.
+Compulsory MVP report list and export policy remain open decisions.

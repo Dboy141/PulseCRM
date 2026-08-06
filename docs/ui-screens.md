@@ -2,11 +2,11 @@
 
 ## Overview
 
-This document lists the main screens required for the PulseCRM MVP. The final appearance will follow the approved mock designs.
+This document lists the main screens and interaction states required for the PulseCRM MVP. Final appearance will follow approved mock designs, but behaviour must follow the approved requirements.
 
 ## 1. Login Page
 
-The login page allows authorised employees to access the CRM.
+The login page allows authorised employees to access PulseCRM through FastAPI authentication.
 
 Main elements:
 
@@ -18,59 +18,135 @@ Main elements:
 
 ## 2. Dashboard
 
-The dashboard provides an overview of important CRM information.
+Dashboard content must be role-aware and organisation-scoped.
 
-Main elements:
+CEO dashboard variants may show:
 
-- Total customers.
-- New leads.
-- Qualified leads.
-- Sales pipeline value.
+- Organisation-wide customers.
+- New customers.
+- Pipeline value.
+- Won opportunities or reliable revenue.
 - Open support cases.
-- Upcoming tasks.
 - Overdue tasks.
-- Recent customer activity.
-- Recent conversations.
+- Conversations needing replies.
+- Company-wide reports and important activity.
+
+CRM Admin dashboard variants may show:
+
+- Possible duplicates.
+- Failed imports.
+- Integration health.
+- Failed integration events.
+- User and role activity.
+- Archived records.
+- Data-quality issues.
+- Overdue or unassigned organisation work.
+
+Sales Representative dashboard variants may show:
+
+- Assigned tasks due today.
+- Overdue tasks.
+- Assigned leads requiring follow-up.
+- Owned opportunities.
+- Personal pipeline value.
+- Opportunities with no next action.
+- Recent activity for related customers.
+
+Inbox Agent dashboard variants may show:
+
+- Conversations needing reply.
+- Unread conversations.
+- Failed outgoing messages.
+- Work created from conversations.
+- Recent customer replies.
+
+Users with several roles should receive a combined dashboard without duplicate widgets.
+
+Website visitors, page views, bounce rate, and session duration should only appear when a website-tracking integration exists. Telemetry is not a required MVP module.
 
 ## 3. Unified Inbox
 
-The unified inbox displays customer conversations from different channels.
+The unified inbox displays customer conversations from different channels in one shared inbox per organisation.
+
+Conversation UI must not include permanent owner controls, Assign Conversation controls, Resolve Conversation controls, Close Conversation controls, or Open/Pending/Resolved conversation tabs.
 
 Main elements:
 
 - Conversation list.
 - Channel indicator.
-- Search and filters.
-- Assigned employee.
-- Conversation status.
+- Search.
+- All filter.
+- Unread filter.
+- Needs Reply filter.
+- Archived view.
+- Spam view.
 - Message area.
+- Reply composer.
+- Internal Note mode.
 - Customer information panel.
-- Button to create a lead, task, opportunity, or support case.
+- Channel-only customer profile state.
+- Linked-work indicators.
+- Failed outgoing message state.
+- No selected conversation state.
+- Mobile navigation.
+
+Required interaction states:
+
+- Another user is currently replying.
+- Selecting one exact message.
+- Selecting several exact messages.
+- Creating a task from selected messages.
+- Creating a lead from selected messages.
+- Creating an opportunity from selected messages.
+- Creating a support case from selected messages.
+- Creating an internal note from selected messages.
+- Linking selected messages to existing work.
+- Possible identity match.
+- Archive conversation.
+- Restore archived conversation.
+- Mark as spam.
+- Remove spam.
+
+Temporary handling presence must warn other authorised inbox users while someone is replying, then expire automatically.
 
 ## 4. Customers Page
 
-The customers page displays all customer records.
+The customers page displays individual customer records and should support progressive identity.
 
 Main elements:
 
 - Customer table.
 - Search bar.
 - Source filter.
-- Status filter.
-- Owner filter.
+- Company filter.
+- Archive filter.
 - Add-customer button.
 - Pagination.
 
+Customer lifecycle tabs should not use Lead or Opportunity.
+
+Required states:
+
+- Lightweight or channel-only profile.
+- Confirmed individual profile.
+- Possible duplicate suggestion.
+- Archived profile.
+- Identity review.
+- Merge review.
+- Reverse merge review.
+
 ## 5. Customer Profile
 
-The customer profile displays all information connected to one customer.
+The customer profile displays all information connected to one individual customer.
 
 Main elements:
 
-- Personal and contact information.
-- Assigned employee.
-- Customer source.
+- Personal information.
+- Multiple contact methods.
+- Multiple provider identities.
+- Addresses.
 - Communication preferences.
+- Source history.
 - Conversations.
 - Leads.
 - Opportunities.
@@ -79,214 +155,149 @@ Main elements:
 - Notes.
 - Files.
 - Activity timeline.
-- Edit and merge actions.
+- Linked companies.
 
 ## 6. Companies Page
 
-The companies page displays business customer records.
+The companies page displays company records separately from individual customers.
 
 Main elements:
 
-- Company list.
-- Search and filters.
-- Company name.
-- Industry.
-- Primary contact.
-- Assigned employee.
+- Company table.
+- Search bar.
+- Industry or source filters.
 - Add-company button.
+- Archive filter.
+- Pagination.
 
-## 7. Leads Page
+## 7. Company Profile
 
-The leads page displays potential customers.
+The company profile displays company details and related contacts.
+
+Main elements:
+
+- Company information.
+- Company contacts.
+- Primary contact marker.
+- Related leads.
+- Related opportunities.
+- Related tasks.
+- Related support cases.
+- Notes.
+- Files.
+- Activity timeline.
+
+## 8. Lead Management
+
+Leads represent commercial interest connected to an existing customer or company.
 
 Main elements:
 
 - Lead list.
-- Search bar.
 - Status filter.
 - Source filter.
-- Assigned-user filter.
-- Lead score.
-- Add-lead button.
-- Qualification and conversion actions.
+- Assignee filter.
+- Customer or company reference.
+- Lead detail panel.
+- Conversion action.
 
-## 8. Lead Details Page
-
-The lead details page displays information about one lead.
-
-Main elements:
-
-- Contact details.
-- Lead source.
-- Lead status.
-- Assigned employee.
-- Lead score.
-- Notes and activities.
-- Follow-up tasks.
-- Qualify button.
-- Convert button.
-- Mark-lost button.
+Lead scoring fields are not required in MVP screens. Lead conversion must create an opportunity without creating a duplicate customer.
 
 ## 9. Sales Pipeline
 
-The sales pipeline displays opportunities according to their current stage.
+The pipeline screen displays opportunities by stage.
 
 Main elements:
 
-- Pipeline columns.
-- Opportunity cards.
-- Opportunity value.
-- Customer or company.
-- Assigned owner.
-- Expected closing date.
-- Drag-and-drop stage movement.
-- Won and lost actions.
-
-## 10. Opportunity Details
-
-The opportunity details page displays information about one potential sale.
-
-Main elements:
-
-- Opportunity name.
-- Customer or company.
-- Pipeline stage.
+- Pipeline board or table.
+- Stage filter.
+- Owner or assignee filter.
 - Expected value.
-- Win probability.
-- Expected closing date.
-- Assigned owner.
-- Notes.
-- Tasks and follow-ups.
-- Mark-won and mark-lost actions.
+- Expected close date.
+- Won and lost actions.
+- Lost reason field.
 
-## 11. Tasks Page
+## 10. Tasks
 
-The tasks page displays employee activities and follow-ups.
+The tasks screen displays individual assignments.
 
 Main elements:
 
 - Task list.
+- Assignee filter.
 - Status filter.
 - Priority filter.
-- Assigned-user filter.
 - Due-date filter.
-- Overdue-task indicator.
-- Add-task button.
-- Complete-task action.
+- Related record links.
+- Reminder indicators.
 
-## 12. Support Cases Page
+Team assignment controls are not required in the first MVP.
 
-The support cases page displays complaints and service requests.
+## 11. Support Cases
 
-Main elements:
-
-- Case number.
-- Customer.
-- Subject.
-- Priority.
-- Status.
-- Assigned employee.
-- Created date.
-- Add-case button.
-- Resolve and reopen actions.
-
-## 13. Reports Page
-
-The reports page displays CRM performance information.
+Support cases handle complaint and service-request work.
 
 Main elements:
 
-- Customer-source report.
-- Lead-conversion report.
-- Sales-pipeline report.
-- Team-performance report.
-- Task report.
-- Support-case report.
-- Date and employee filters.
-- Tables and charts.
-- CSV export button.
+- Case list.
+- Automatically generated case number.
+- Status filter.
+- Priority filter.
+- Assignee filter.
+- Customer or company link.
+- Source conversation link.
+- Source-message links.
 
-## 14. Integrations Page
+Case workflow states may include Open, In Progress, Waiting on Customer, and Resolved. These states belong to support cases only.
 
-The integrations page allows administrators to manage connected platforms.
+## 12. Imports
+
+The imports screen supports CSV import review.
 
 Main elements:
 
-- Website integration.
-- WhatsApp integration.
-- Instagram integration.
-- Facebook integration.
+- Import list.
+- Import status.
+- Import row review.
+- Error details.
+- Created or matched record links.
+
+## 13. Integrations
+
+The integrations screen supports connected communication channels.
+
+Main elements:
+
+- Integration list.
 - Connection status.
-- Enable or disable actions.
-- Test-connection button.
-- Integration-error information.
+- Failed integration events.
+- Event replay action.
+- Webhook health indicators.
 
-## 15. User Management Page
+## 14. User Management
 
-The user-management page allows administrators to manage employee accounts.
+User management must support several roles per organisation membership.
 
 Main elements:
 
 - User list.
-- Name and email.
-- Role.
-- Team.
-- Account status.
-- Add-user button.
-- Edit-user action.
-- Activate or deactivate action.
+- Membership status.
+- Role assignment.
+- Permission visibility.
+- Activate and deactivate user actions.
 
-## 16. Settings Page
+Formal team management is deferred for the first MVP.
 
-The settings page allows authorised users to configure the CRM.
+## 15. Reports
 
-Main elements:
-
-- Organisation settings.
-- Roles and permissions.
-- Sales pipeline stages.
-- Lead statuses.
-- Support-case categories.
-- Notification preferences.
-- Communication preferences.
-- Import and export settings.
-
-## 17. Notifications Panel
-
-The notifications panel displays important system alerts.
+Reports must follow the viewer's permissions and organisation boundary.
 
 Main elements:
 
-- New assignments.
-- Upcoming tasks.
-- Overdue tasks.
-- New support cases.
-- Integration failures.
-- Read and unread status.
-- Mark-all-as-read action.
+- Report list.
+- Date filters.
+- Source filters.
+- Channel filters.
+- Export action where permitted.
 
-## Navigation
-
-The main sidebar should include:
-
-- Dashboard.
-- Inbox.
-- Customers.
-- Companies.
-- Leads.
-- Sales Pipeline.
-- Tasks.
-- Support Cases.
-- Reports.
-- Integrations.
-- Settings.
-
-## Responsive Design
-
-The application should work on:
-
-- Desktop computers.
-- Tablets.
-- Mobile devices.
-
-Desktop design will be prioritised for the initial MVP.
+The compulsory MVP report list remains unresolved.

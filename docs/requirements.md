@@ -1,529 +1,284 @@
 # PulseCRM Requirements
 
-## Project Overview
+## Product Overview
 
-PulseCRM is a Customer Relationship Management system designed to help businesses manage customers coming from multiple channels, including websites, WhatsApp, Instagram, Facebook, physical stores, CSV files, and other business systems.
+PulseCRM is a multi-tenant Customer Relationship Management system for businesses that manage customers across websites, WhatsApp, Instagram, Facebook, physical stores, CSV imports, and other business systems.
 
-The system will bring customer information into one platform and create a single trusted customer profile containing conversations, enquiries, purchases, sales opportunities, complaints, tasks, and activity history.
+One deployment may support multiple organisations. Every organisation-owned record must belong to an organisation, and users must never access data for an organisation they do not belong to. Organisation isolation must be enforced by the backend, not only by the frontend.
 
-
-## Project Objectives
-
-The main objectives of PulseCRM are to:
-
-- Collect customer information from multiple communication channels.
-- Create one unified profile for each customer.
-- Help employees manage leads and sales opportunities.
-- Assign customers, leads, conversations, and tasks to employees.
-- Track customer conversations, enquiries, complaints, and follow-ups.
-- Detect and merge duplicate customer records.
-- Provide reports showing customer sources, sales performance, conversions, and team activity.
-
-
+FastAPI owns authentication. Supabase provides PostgreSQL and file storage; Supabase Auth is not the primary authentication service.
 
 ## MVP Scope
 
 The first version of PulseCRM will include:
 
-- Customer capture from websites, WhatsApp, Meta platforms, CSV files, and manual entry.
-- Unified customer profiles and activity timelines.
-- Customer matching using phone numbers and email addresses.
-- Duplicate customer detection and record merging.
-- Lead creation, qualification, scoring, and assignment.
-- Sales pipeline and opportunity tracking.
-- Tasks, reminders, and follow-up management.
-- Basic complaint and service-request tracking.
-- Customer-source, conversion, sales, and team reports.
-- User roles, permissions, and audit logs.
+- Multi-tenant organisations and organisation memberships.
+- FastAPI authentication, password reset, roles, permissions, and audit logs.
+- Initial roles: CEO, CRM Admin, Sales Representative, and Inbox Agent.
+- Users with one or more roles within an organisation membership.
+- Customer capture from connected channels, CSV import, and manual entry.
+- Progressive customer identity, including channel-only profiles before phone or email is known.
+- Separate individual customer and company records connected through company-contact relationships.
+- Duplicate suggestions, CRM Admin merge, merge history, and reverse merge.
+- One shared inbox per organisation.
+- Temporary handling presence instead of permanent conversation assignment.
+- Per-user conversation read state.
+- Exact message selection for creating or linking CRM work.
+- Lead, opportunity, task, and support case workflows.
+- Archive and restore for normal product deletion.
+- Role-aware dashboards and reports.
 
+Formal team management, team assignment, lead scoring, live lead-location tracking, website telemetry, and an AI assistant are not part of the first MVP unless approved later.
 
-## Authentication and User Management
+## Authentication And User Management
 
 PulseCRM must allow authorised employees to securely access the system.
 
 The system must support:
 
-- User login and logout.
+- User login, logout, token refresh, and password reset.
 - Secure password storage.
 - Protected pages and API endpoints.
-- User roles such as administrator, manager, sales employee, and support employee.
-- Role-based access permissions.
+- Organisation memberships.
+- Multiple roles per user within an organisation.
+- Role-based permissions.
 - User account activation and deactivation.
-- Password reset functionality.
-- Recording important user actions in an audit log.
+- Audit logging for important actions.
 
+Initial MVP roles are:
 
+- CEO
+- CRM Admin
+- Sales Representative
+- Inbox Agent
 
+Access depends on both role permissions and the user's relationship to the record. CEO and CRM Admin can normally see organisation-wide records. Sales Representatives normally see leads, opportunities, tasks, and related customers they are permitted to access. Inbox Agents can see the shared inbox and basic customer context. Sales access does not automatically grant inbox access; inbox access must be represented by an explicit permission or additional role.
+
+Suggested permission concepts include:
+
+```text
+inbox.view
+inbox.reply
+inbox.create_action
+customers.merge
+customers.reverse_merge
+customers.export
+users.manage
+roles.manage
+integrations.manage
+imports.manage
+audit.view
+reports.company_view
+reports.export
+```
+
+Exact permission names may be refined during implementation.
 
 ## Customer Management
 
-PulseCRM must allow users to create, view, update, search, and manage customer records.
+PulseCRM must support individual customers and companies as separate record types.
 
 The system must support:
 
-- Individual customers and company customers.
-- Customer names, email addresses, phone numbers, addresses, and company details.
+- Channel-only customer profiles when only a provider identity is known.
+- Progressive collection of first name, last name, phone, email, addresses, and preferences.
+- Multiple phone numbers, email addresses, addresses, and provider identities per customer.
+- Manually confirmed individual customers with first name, last name, and at least one reliable contact method such as phone or email.
+- Company records linked to individual customers through company-contact relationships.
+- Optional primary contacts for companies.
 - Customer source tracking, such as website, WhatsApp, Instagram, Facebook, store, CSV, or manual entry.
-- Assignment of customers to employees.
-- Customer status, such as active or inactive.
 - Customer communication preferences and consent.
-- A unified profile showing conversations, leads, opportunities, tasks, complaints, notes, files, and activity history.
-- Customer search, sorting, filtering, and pagination.
-- Detection of possible duplicate customer records.
-- Merging duplicate records into one trusted customer profile.
+- Unified customer timelines showing conversations, leads, opportunities, tasks, cases, notes, files, and activity history.
+- Search, sorting, filtering, and pagination.
+- Archive and restore instead of ordinary permanent deletion.
 
+Lead and Opportunity are not customer lifecycle values.
 
+## Duplicate Handling
+
+PulseCRM must detect possible duplicate customer records.
+
+Strong identity evidence includes:
+
+- Exact normalised phone number.
+- Exact normalised email address.
+- Exact provider identity.
+- Trusted order or customer reference where available.
+
+Weak evidence includes:
+
+- Similar name.
+- Same company.
+- Similar address.
+- Same city.
+- Similar social display name.
+
+Weak evidence may create a possible-match suggestion but must not automatically merge records. CRM Admin performs the final merge. Merges must preserve related information, maintain merge history, and support authorised reverse merge.
 
 ## Unified Inbox
 
-PulseCRM must provide one inbox for managing customer conversations from different communication channels.
+PulseCRM must provide one shared inbox per organisation for customer conversations from connected channels.
+
+Conversations are ongoing customer communication threads, not support tickets. Conversations are not permanently assigned to employees and do not have Open, Pending, Resolved, or Closed workflow states.
+
+The inbox must support:
+
+- Explicit inbox permissions.
+- All, Unread, and Needs Reply filters.
+- Archive and Spam as organisational actions.
+- Per-user read state.
+- Temporary handling presence.
+- Reply mode.
+- Internal Note mode.
+- Failed outgoing message state and retry.
+- Channel indicators.
+- Customer context panel.
+- Channel-only customer context.
+- Possible identity match suggestions.
+- Linked-work indicators.
+- No selected conversation state.
+- Mobile navigation.
+
+Temporary handling presence must:
+
+- Start when an authorised user focuses or types in the composer.
+- Refresh while the user remains active.
+- Be visible to other authorised inbox users.
+- Expire automatically.
+- Warn rather than permanently lock the conversation.
+- Avoid storing permanent conversation ownership.
+
+Users must be able to select one or more exact messages and:
+
+- Create a task.
+- Create a lead.
+- Create an opportunity.
+- Create a support case.
+- Create an internal note.
+- Link selected messages to an existing work record.
+
+Created or linked work must retain source-message traceability.
+
+## Leads
+
+A lead is commercial interest connected to an existing customer or company. A lead is not a separate duplicate person record.
+
+Lead scoring, automatic lead assignment, and team lead assignment are not part of the first MVP.
+
+Suggested initial lead statuses:
+
+- New
+- Contacted
+- Qualified
+- Unqualified
+- Converted
+
+When a lead is converted:
+
+- Keep the original lead.
+- Mark it Converted.
+- Create an opportunity.
+- Reuse the same customer or company.
+- Preserve notes, source, activity, and source-message links.
+- Do not create another customer.
+
+## Opportunities
+
+PulseCRM must support sales opportunities connected to existing customers or companies.
 
 The system must support:
 
-- Receiving conversations from websites, WhatsApp, Instagram, and Facebook.
-- Displaying all conversations in one inbox.
-- Showing the communication channel for each conversation.
-- Linking each conversation to the correct customer profile.
-- Assigning conversations to employees.
-- Marking conversations as unread, open, pending, or resolved.
-- Searching and filtering conversations.
-- Viewing the customer’s recent activity beside the conversation.
-- Creating a lead, task, complaint, or sales opportunity from a conversation.
-- Recording the complete conversation history.
+- Opportunity name.
+- Customer or company reference.
+- Expected value.
+- Individual owner or assignee.
+- Source.
+- Pipeline stage.
+- Expected closing date.
+- Won and lost outcomes.
+- Lost reason where applicable.
+- Archive and restore.
 
+## Tasks
 
+Tasks are assigned to individuals in the first MVP. Team task assignment is deferred.
 
-## Lead Management
+Normal users see tasks assigned to them and tasks they created. CEO and CRM Admin may see organisation-wide tasks.
 
-PulseCRM must allow users to capture, qualify, assign, and track potential customers.
+Suggested task statuses:
 
-The system must support:
-
-- Creating leads manually or automatically from incoming enquiries.
-- Recording the lead’s name, contact details, company, source, and area of interest.
-- Linking a lead to an existing customer when a matching record is found.
-- Assigning leads to employees or teams.
-- Tracking lead statuses such as new, contacted, qualified, unqualified, converted, or lost.
-- Adding notes and activities to a lead.
-- Scheduling follow-ups and tasks for leads.
-- Applying lead scores based on defined criteria.
-- Searching, sorting, and filtering leads.
-- Converting qualified leads into customers and sales opportunities.
-- Recording the reason when a lead is rejected or lost.
+- To Do
+- In Progress
+- Done
+- Cancelled
 
+Tasks may link to customers, companies, leads, opportunities, support cases, conversations, and exact source messages.
 
+## Support Cases
 
-## Sales Pipeline and Opportunities
-
-PulseCRM must allow users to manage potential sales from initial interest until they are won or lost.
-
-The system must support:
-
-- Creating sales opportunities from qualified leads or existing customers.
-- Recording the opportunity name, customer, expected value, owner, source, and expected closing date.
-- Organising opportunities into pipeline stages.
-- Moving opportunities between stages.
-- Recording the probability of winning each opportunity.
-- Adding notes, tasks, meetings, and follow-up activities.
-- Marking opportunities as won or lost.
-- Recording the reason when an opportunity is lost.
-- Searching, sorting, and filtering opportunities.
-- Displaying the total value of opportunities in each pipeline stage.
-- Tracking sales performance and conversion rates.
-
-
-## Tasks, Reminders, and Follow-Ups
-
-PulseCRM must allow users to create and manage activities required for customer follow-up.
+Use Support Case consistently for complaint and service-request work.
 
-The system must support:
+A support case may have workflow states such as:
 
-- Creating tasks for customers, leads, opportunities, conversations, or complaints.
-- Assigning tasks to individual employees or teams.
-- Setting task titles, descriptions, due dates, priorities, and statuses.
-- Tracking task statuses such as pending, in progress, completed, or cancelled.
-- Displaying overdue, upcoming, and completed tasks.
-- Creating reminders for important follow-ups.
-- Recording calls, meetings, emails, and other customer activities.
-- Adding notes and attachments to tasks.
-- Filtering tasks by employee, status, priority, and due date.
-- Displaying tasks on the customer activity timeline.
+- Open
+- In Progress
+- Waiting on Customer
+- Resolved
 
-## Complaints and Service Requests
+These states belong to support cases, not conversations.
 
-PulseCRM must allow users to record and manage customer complaints and support requests.
+Support cases must support:
 
-The system must support:
-
-- Creating complaints or service requests manually or from conversations.
-- Linking each case to the correct customer.
-- Recording the subject, description, source, category, and priority.
-- Assigning cases to employees or support teams.
-- Tracking case statuses such as open, in progress, waiting, resolved, or closed.
-- Adding notes, files, and responses to a case.
-- Recording the date and method of resolution.
-- Reopening previously closed cases.
-- Searching, sorting, and filtering cases.
-- Displaying the complete case history on the customer profile.
+- Automatically generated case number.
+- Customer or company reference.
+- Optional source conversation and source-message links.
+- Individual assignee.
+- Priority.
+- Status.
+- Notes and activity history.
+- Archive and restore.
 
-## Reports and Analytics
+Suggested priorities:
 
-PulseCRM must provide reports that help businesses understand customer, sales, and employee performance.
-
-The system must support:
-
-- Customer-source reports.
-- Lead conversion reports.
-- Sales pipeline reports.
-- Won and lost opportunity reports.
-- Employee and team performance reports.
-- Task completion and overdue-task reports.
-- Complaint and service-request reports.
-- Customer activity reports.
-- Filtering reports by date, source, employee, team, status, or channel.
-- Displaying report information using summary cards, tables, and charts.
-- Exporting selected reports to CSV where required.
+- Low
+- Normal
+- High
+- Urgent
 
-## Customer Capture and Integrations
+Customer case updates are manual through the linked conversation unless an automatic-update policy is approved later.
 
-PulseCRM must collect customer information from multiple channels and external sources.
+## Imports And Integrations
 
-The MVP must support:
-
-- Website contact forms.
-- WhatsApp enquiries.
-- Instagram and Facebook enquiries through Meta integrations.
-- CSV customer imports.
-- Manual customer, lead, and company creation.
-- Receiving webhook events from supported integrations.
-- Storing the original source of every customer and lead.
-- Linking incoming information to an existing customer when a match is found.
-- Creating a new customer record when no match is found.
-- Retrying failed integration and webhook operations.
-- Recording integration errors for investigation.
-- Enabling or disabling integrations from the settings area.
+PulseCRM must support CSV imports and connected-channel integrations.
 
-## Customer Identity Matching
+The system must persist import batches, import rows, integration events, webhook payload references, processing status, failures, and idempotency keys where appropriate. Failed integration events must be reviewable and replayable by authorised users.
 
-PulseCRM must identify when information from different channels belongs to the same customer.
-
-The system must support:
-
-- Matching customer records using normalised phone numbers.
-- Matching customer records using normalised email addresses.
-- Detecting possible duplicate customer records.
-- Warning users before creating a likely duplicate.
-- Allowing authorised users to review duplicate suggestions.
-- Merging duplicate records into one customer profile.
-- Preserving conversations, tasks, leads, opportunities, complaints, and activity history during a merge.
-- Recording the merge operation in the audit log.
-- Preventing the accidental loss of customer information.
+## Dashboard And Reports
 
-## Companies and Contacts
+Dashboard content must be role-aware. Every metric must obey RBAC and organisation boundaries. Users with several roles should receive a combined dashboard without duplicate widgets.
 
-PulseCRM must support relationships between companies and individual contacts.
-
-The system must support:
+CEO dashboard content may include organisation-wide customers, new customers, pipeline value, won opportunities or reliable revenue, open support cases, overdue tasks, conversations needing replies, company-wide reports, and important activity.
 
-- Creating and managing company records.
-- Storing company names, industries, websites, addresses, and contact details.
-- Linking multiple contacts to one company.
-- Assigning a primary contact to a company.
-- Displaying related leads, opportunities, tasks, conversations, and complaints.
-- Assigning companies to employees or teams.
-- Searching, sorting, and filtering company records.
+CRM Admin dashboard content may include possible duplicates, failed imports, integration health, failed integration events, user and role activity, archived records, data-quality issues, and overdue or unassigned organisation work.
 
-## Roles and Permissions
+Sales Representative dashboard content may include assigned tasks due today, overdue tasks, assigned leads requiring follow-up, owned opportunities, personal pipeline value, opportunities with no next action, and recent activity for related customers.
 
-PulseCRM must restrict access according to each user’s role and responsibilities.
+Inbox Agent dashboard content may include conversations needing reply, unread conversations, failed outgoing messages, work created from conversations, and recent customer replies.
 
-The system should initially support roles such as:
+Website visitors, page views, bounce rate, and session duration only appear when a website-tracking integration exists. Telemetry is not a required MVP module.
 
-- Administrator.
-- Manager.
-- Sales employee.
-- Support employee.
-- Standard employee.
+Revenue should only appear when PulseCRM has reliable order, payment, or approved won-opportunity data.
 
-Permissions must control whether a user can:
+Reports must follow the viewer's permissions. Compulsory MVP reports remain an open decision.
 
-- View, create, edit, or delete customers.
-- View or manage all leads or only assigned leads.
-- View or manage all opportunities or only assigned opportunities.
-- Assign records to other employees.
-- Merge duplicate customer records.
-- View reports.
-- Manage integrations.
-- Manage users and roles.
-- View audit logs.
-- Export customer or report data.
-- Change system settings.
+## Archive And Restore
 
-## Audit Logs and Activity History
+Normal product deletion should archive a record rather than permanently remove it.
 
-PulseCRM must record important actions performed within the system.
+Relevant records must support:
 
-The audit log must record:
+- `archived_at`
+- `archived_by_user_id`
+- Restore action
 
-- The user who performed the action.
-- The date and time of the action.
-- The type of action performed.
-- The record affected by the action.
-- Important values before and after a change.
-- Customer-record merges.
-- User login activity.
-- Role and permission changes.
-- Integration and import activity.
-- Record creation, updates, deletion, and assignment changes.
-
-Audit logs must only be accessible to authorised users.
-
-## Customer Consent and Communication Preferences
-
-PulseCRM must store customer communication choices and consent information.
-
-The system must support:
-
-- Recording whether a customer agrees to receive marketing communication.
-- Recording permitted communication channels.
-- Storing consent dates and sources.
-- Allowing customers to be marked as opted out.
-- Preventing unauthorised marketing communication to opted-out customers.
-- Recording changes to communication preferences.
-- Displaying consent information on the customer profile.
-
-## Notifications
-
-PulseCRM should notify users about important activities.
-
-The system must support:
-
-- New lead assignment notifications.
-- New conversation assignment notifications.
-- Upcoming task reminders.
-- Overdue task notifications.
-- New complaint or service-request notifications.
-- Opportunity stage-change notifications.
-- Integration failure notifications for administrators.
-- In-app notifications.
-- Email notifications where required.
-- Marking notifications as read or unread.
-
-## Search, Filtering, and Pagination
-
-PulseCRM must make it easy to find records throughout the system.
-
-The system must support:
-
-- Global search for customers, companies, leads, and opportunities.
-- Search by name, email address, phone number, or company.
-- Filtering records by status, source, owner, date, and channel.
-- Sorting tables by relevant columns.
-- Pagination for large lists.
-- Remembering selected filters during the current session.
-- Clear empty states when no results are found.
-
-## File and Attachment Management
-
-PulseCRM must allow authorised users to attach files to relevant records.
-
-The system must support:
-
-- Uploading files to customer profiles.
-- Adding attachments to tasks, complaints, conversations, and opportunities.
-- Storing files using Supabase Storage.
-- Recording the file name, type, size, uploader, and upload date.
-- Restricting file access according to user permissions.
-- Deleting files when permitted.
-- Validating file types and file sizes.
-
-## Dashboard
-
-The dashboard must provide users with a summary of important CRM information.
-
-The dashboard should display:
-
-- Total customers.
-- New customers.
-- Active leads.
-- Qualified leads.
-- Sales pipeline value.
-- Won opportunities.
-- Open complaints.
-- Upcoming tasks.
-- Overdue tasks.
-- Recent customer activity.
-- Recent conversations.
-- Performance summaries based on the user’s role.
-
-## Settings
-
-The settings area must allow authorised users to manage the application.
-
-The system must support:
-
-- User account settings.
-- Organisation information.
-- User and team management.
-- Role and permission management.
-- Integration configuration.
-- Sales pipeline stage configuration.
-- Lead status configuration.
-- Complaint category configuration.
-- Notification preferences.
-- Customer communication preferences.
-- Import and export settings.
-
-## CSV Import Requirements
-
-PulseCRM must allow customer information to be imported from CSV files.
-
-The system must support:
-
-- Uploading a CSV file.
-- Mapping CSV columns to CRM fields.
-- Previewing data before import.
-- Validating required fields.
-- Detecting invalid email addresses and phone numbers.
-- Detecting possible duplicates before import.
-- Showing successful and failed import records.
-- Allowing users to download an import-error report.
-- Recording the import in the audit log.
-
-## Non-Functional Requirements
-
-### Security
-
-The system must:
-
-- Use secure authentication.
-- Store passwords securely.
-- Protect private API endpoints.
-- Validate frontend and backend input.
-- Prevent unauthorised access to customer information.
-- Use environment variables for secrets and credentials.
-- Apply role-based access control.
-- Record important actions in audit logs.
-- Use secure HTTPS connections in production.
-
-### Performance
-
-The system should:
-
-- Load commonly used pages within a reasonable time.
-- Use pagination for large datasets.
-- Process background jobs without blocking normal user activity.
-- Support database indexing for frequently searched fields.
-- Handle webhook retries and failed jobs.
-- Avoid unnecessary API and database requests.
-
-### Reliability
-
-The system should:
-
-- Handle application errors without losing customer information.
-- Record backend and integration errors.
-- Retry temporary webhook and background-job failures.
-- support database backups.
-- Prevent duplicate webhook processing.
-- Validate data before saving it.
-
-### Usability
-
-The system should:
-
-- Have a clear and consistent user interface.
-- Work on desktop, tablet, and mobile screen sizes.
-- Provide clear validation and error messages.
-- Display loading states during operations.
-- Display confirmation messages after successful actions.
-- Warn users before destructive actions.
-- Follow the approved screen designs.
-
-### Maintainability
-
-The system should:
-
-- Use a modular monolith architecture.
-- Keep major features separated into modules.
-- Follow consistent naming and coding standards.
-- Include documentation for setup and development.
-- Use database migrations for schema changes.
-- Use GitHub for collaboration and version control.
-- Include separate development and production configurations.
-
-## Technology Stack
-
-The proposed technology stack is:
-
-- Next.js for the frontend.
-- TypeScript for frontend development.
-- FastAPI for the backend API.
-- Python for backend development.
-- PostgreSQL through Supabase for the database.
-- SQLAlchemy for database models and queries.
-- Alembic for database migrations.
-- Supabase Storage for file storage.
-- Redis for queues, caching, and scheduled operations.
-- A background worker for webhooks, retries, scheduled jobs, and notifications.
-- Vercel for frontend hosting.
-- Railway or Render for backend and worker hosting.
-- GitHub for version control and deployment workflows.
-
-## Proposed Application Modules
-
-The modular monolith should contain the following main modules:
-
-- Authentication and users.
-- Roles and permissions.
-- Customers and contacts.
-- Companies.
-- Customer identity matching.
-- Conversations and unified inbox.
-- Leads.
-- Sales opportunities and pipelines.
-- Tasks and reminders.
-- Complaints and service requests.
-- Reports and analytics.
-- Integrations and webhooks.
-- Notifications.
-- Files and attachments.
-- Audit logs.
-- Settings.
-
-## MVP Screens
-
-The initial application should include:
-
-- Login page.
-- Dashboard.
-- Unified inbox.
-- Customer list.
-- Customer profile.
-- Company list.
-- Company profile.
-- Lead list.
-- Lead details.
-- Sales pipeline.
-- Opportunity details.
-- Task list.
-- Complaint and service-request list.
-- Reports page.
-- Integrations page.
-- User-management page.
-- Settings page.
-
-## Features Outside the Initial MVP
-
-The following features may be considered after the MVP:
-
-- Advanced workflow automation.
-- Artificial intelligence lead scoring.
-- Automated message suggestions.
-- Advanced marketing campaigns.
-- Voice and telephone integrations.
-- Additional external business-system integrations.
-- Advanced customer segmentation.
-- Custom report builders.
-- Mobile applications.
-- Multi-language support.
+Normal users should not see archived records by default.

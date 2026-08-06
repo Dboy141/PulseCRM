@@ -1,93 +1,41 @@
 # PulseCRM Open Questions
 
-Before development begins, the team should confirm the following decisions.
+This file contains unresolved decisions only. Confirmed behaviour belongs in `docs/requirements.md`.
 
-## General
+## Product Questions
 
-- Will PulseCRM initially support one business or multiple businesses?
-- What is the official project name?
 - Which features are compulsory for the first MVP release?
-- Who will approve the final requirements and designs?
-
-## Authentication and Users
-
-- Will authentication be handled by Supabase Auth or FastAPI?
-- What user roles are required for the MVP?
-- Can one user have more than one role?
-- Should users only view records assigned to them, or all company records?
-- Is password reset required in the first version?
-
-## Customer Management
-
-- What customer fields are compulsory?
-- Should companies and individual customers be stored separately?
-- What rules will be used to detect duplicate customers?
-- Who is allowed to merge duplicate records?
-- Should deleted customer records be archived instead of permanently removed?
-
-## Unified Inbox
-
-- Which communication channel will be implemented first?
-- Will users send replies directly from PulseCRM?
-- Should incoming messages appear in real time?
-- Will the system use one shared inbox or separate team inboxes?
-- How should conversations be assigned to employees?
-
-## WhatsApp and Meta Integrations
-
-- Which WhatsApp API provider will be used?
-- Which Meta accounts will be connected?
-- Are the required business accounts and API credentials available?
-- Which webhook events must be supported?
-- How long should failed webhook operations be retried?
-
-## Leads
-
-- What information is required when creating a lead?
-- What lead statuses should be used?
-- How will lead scores be calculated?
-- Can leads be assigned automatically?
-- What should happen when a lead is converted?
-
-## Sales Pipeline
-
-- What pipeline stages should be used?
-- Can administrators create custom pipeline stages?
-- What currencies must the system support?
-- How should win probability be calculated?
-- What information is required when an opportunity is marked as lost?
-
-## Tasks and Notifications
-
-- Which notification types are required?
-- Should notifications be in-app, email, or both?
+- Who will approve final requirements and designs?
+- Which real communication channel launches first?
+- Should notifications also send email, or only appear in-app for the MVP?
 - When should task reminders be sent?
-- Can tasks be assigned to teams as well as individuals?
-
-## Support Cases
-
-- What complaint and service-request categories are required?
-- Should cases have automatic case numbers?
-- What priority levels should be used?
-- Should customers receive updates when a case changes?
-
-## Reports
-
+- What initial support-case categories are required?
 - Which reports are compulsory for the MVP?
-- Who can view company-wide reports?
-- Should users be able to export reports?
-- Which date, user, team, source, and channel filters are required?
+- Is Customer Owner required or optional in the first MVP?
+- Does the first MVP support starting new outbound conversations, or only replying to inbound conversations?
+- How much pipeline-stage customisation is available in the MVP?
 
-## CSV Imports
+## External Account Questions
 
-- Which records can be imported: customers, companies, leads, or all three?
-- Which CSV fields are compulsory?
-- How should duplicate records be handled?
-- Should users confirm the data before completing an import?
+- Which WhatsApp number will be connected?
+- Will WhatsApp use the direct Meta API or a third-party provider?
+- Which Facebook Page will be connected?
+- Which Instagram professional account will be connected?
+- Are the required Meta access, business verification, and permissions available?
+- Who owns the developer application and external platform accounts?
+- Are test credentials and sandbox accounts available?
 
-## Hosting and Deployment
+## Engineering Questions
 
-- Will Railway or Render be used for the backend?
-- Where will Redis be hosted?
-- Who will manage Supabase, Vercel, and deployment credentials?
-- Will separate development and production environments be created?
+- What exact access-token, refresh-token, and cookie strategy will FastAPI use?
+- What realtime transport will be used for messages, read state, presence, and linked-work updates?
+- Which exact webhook events must be supported?
+- How will webhook verification and idempotency be implemented?
+- What retry backoff and maximum attempt count should failed webhook operations use?
+- Which hosting platform will be used?
+- Is Redis required on day one?
+- Which Redis host will be used if Redis is required?
+- Which background-job library will be used?
+- Which email provider will be used?
+- Who owns production secret storage and rotation?
+- When will staging be available?
