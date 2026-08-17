@@ -1,0 +1,73 @@
+export const inboxAttentionQueue = [
+    {
+        id: "conversation-001",
+        customer: "Amara Okafor",
+        channel: "WhatsApp",
+        message: "Hi, I still haven't received the updated quotation.",
+        time: "4 min ago",
+        status: "Needs reply",
+        handling: null,
+    },
+    {
+        id: "conversation-002",
+        customer: "Michael Adeyemi",
+        channel: "Instagram",
+        message: "Is someone available to help me with this order?",
+        time: "12 min ago",
+        status: "Unread",
+        handling: "Sarah is currently replying",
+    },
+    {
+        id: "conversation-003",
+        customer: "Grace Bello",
+        channel: "Website",
+        message: "My previous message failed to go through.",
+        time: "28 min ago",
+        status: "Needs reply",
+        handling: null,
+    },
+    {
+        id: "conversation-004",
+        customer: "Prime Stores Ltd",
+        channel: "WhatsApp",
+        message: "Please confirm whether our request has been processed.",
+        time: "41 min ago",
+        status: "Needs reply",
+        handling: "David is currently replying",
+    },
+];
+
+export const conversationWork = [
+    {
+        id: "work-conversation-001",
+        type: "Task",
+        title: "Send updated quotation",
+        customer: "Amara Okafor",
+        source: "WhatsApp conversation",
+        created: "8 min ago",
+    },
+    {
+        id: "work-conversation-002",
+        type: "Lead",
+        title: "Business package enquiry",
+        customer: "Michael Adeyemi",
+        source: "Instagram conversation",
+        created: "24 min ago",
+    },
+    {
+        id: "work-conversation-003",
+        type: "Case",
+        title: "Order delivery complaint",
+        customer: "Grace Bello",
+        source: "Website conversation",
+        created: "52 min ago",
+    },
+    {
+        id: "work-conversation-004",
+        type: "Opportunity",
+        title: "Prime Stores renewal",
+        customer: "Prime Stores Ltd",
+        source: "WhatsApp conversation",
+        created: "1 hr ago",
+    },
+];
