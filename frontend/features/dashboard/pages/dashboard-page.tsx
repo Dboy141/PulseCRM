@@ -1,18 +1,33 @@
 "use client";
 
+import { useState } from "react";
+
 import ActivityFeed from "../components/activity-feed";
 import CustomerOverview from "../components/customer-overview";
 import InboxPreview from "../components/inbox-preview";
 import Icon from "../components/icon";
 import MetricCard from "../components/metric-card";
 import PipelineOverview from "../components/pipeline-overview";
+import RoleSwitcher from "../components/role-switcher";
 import Sidebar from "../components/sidebar";
 import TelemetryOverview from "../components/telemetry-overview";
 import TopHeader from "../components/top-header";
 
-import { dashboardMetrics } from "../data/dashboard.mock";
+import { roleDashboardConfig } from "../data/role-dashboard.mock";
+
+import type { DashboardRole } from "../types/dashboard.types";
 
 export default function DashboardPage() {
+    const [selectedRole, setSelectedRole] =
+        useState<DashboardRole>("CEO");
+
+    const dashboard =
+        roleDashboardConfig[selectedRole];
+
+    const showMainOverview =
+        dashboard.showCustomerOverview ||
+        dashboard.showPipeline;
+
     return (
         <main className="min-h-screen bg-[#f7f8fc] text-[#202533]">
             <div className="xl:grid xl:grid-cols-[206px_minmax(0,1fr)_310px]">
@@ -28,55 +43,84 @@ export default function DashboardPage() {
                             </h1>
 
                             <p className="mt-1 text-xs text-[#7e879d]">
-                                Here&apos;s what&apos;s
-                                happening with your business
-                                today.
+                                Here&apos;s what&apos;s happening
+                                with your business today.
+                            </p>
+
+                            <p className="mt-2 text-[10px] font-semibold text-[#4f6eff]">
+                                Viewing as {selectedRole}
                             </p>
                         </div>
 
-                        <button
-                            type="button"
-                            className="flex items-center gap-2 self-start rounded-xl border border-[#e0e5ef] bg-white px-4 py-2.5 text-[11px] font-semibold text-[#68728a]"
-                        >
-                            <Icon
-                                name="calendar"
-                                className="h-4 w-4"
+                        <div className="flex flex-wrap items-center gap-2">
+                            <RoleSwitcher
+                                value={selectedRole}
+                                onChange={setSelectedRole}
                             />
 
-                            May 21 – May 27, 2026
+                            <button
+                                type="button"
+                                className="flex items-center gap-2 rounded-xl border border-[#e0e5ef] bg-white px-4 py-2.5 text-[11px] font-semibold text-[#68728a]"
+                            >
+                                <Icon
+                                    name="calendar"
+                                    className="h-4 w-4"
+                                />
 
-                            <Icon
-                                name="chevron-down"
-                                className="h-3 w-3"
-                            />
-                        </button>
+                                May 21 – May 27, 2026
+
+                                <Icon
+                                    name="chevron-down"
+                                    className="h-3 w-3"
+                                />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-                        {dashboardMetrics.map(
-                            (metric) => (
-                                <MetricCard
-                                    key={metric.label}
-                                    {...metric}
-                                />
-                            )
-                        )}
+                        {dashboard.metrics.map((metric) => (
+                            <MetricCard
+                                key={metric.label}
+                                {...metric}
+                            />
+                        ))}
                     </div>
 
-                    <div className="mt-5 grid grid-cols-1 gap-4 2xl:grid-cols-[1.35fr_1fr]">
-                        <CustomerOverview />
-                        <PipelineOverview />
-                    </div>
+                    {showMainOverview && (
+                        <div
+                            className={`mt-5 grid grid-cols-1 gap-4 ${
+                                dashboard.showCustomerOverview &&
+                                dashboard.showPipeline
+                                    ? "2xl:grid-cols-[1.35fr_1fr]"
+                                    : ""
+                            }`}
+                        >
+                            {dashboard.showCustomerOverview && (
+                                <CustomerOverview />
+                            )}
 
-                    <div className="mt-5">
-                        <TelemetryOverview />
-                    </div>
+                            {dashboard.showPipeline && (
+                                <PipelineOverview />
+                            )}
+                        </div>
+                    )}
+
+                    {dashboard.showTelemetry && (
+                        <div className="mt-5">
+                            <TelemetryOverview />
+                        </div>
+                    )}
                 </section>
 
                 <aside className="hidden min-h-screen border-l border-[#e3e7ef] bg-[#f7f8fc] px-4 py-5 xl:block">
                     <div className="sticky top-5 space-y-4">
-                        <InboxPreview />
-                        <ActivityFeed />
+                        {dashboard.showInbox && (
+                            <InboxPreview />
+                        )}
+
+                        {dashboard.showActivity && (
+                            <ActivityFeed />
+                        )}
                     </div>
                 </aside>
             </div>
