@@ -1,35 +1,55 @@
+import Link from "next/link";
 import Icon from "./icon";
+
+type SidebarItem =
+    | "Dashboard"
+    | "Inbox"
+    | "Customers"
+    | "Tasks"
+    | "Pipeline"
+    | "Cases";
+
+type SidebarProps = {
+    activeItem?: SidebarItem;
+};
 
 const navigation = [
     {
-        label: "Dashboard",
+        label: "Dashboard" as const,
         icon: "dashboard" as const,
-        active: true,
+        href: "/",
     },
     {
-        label: "Inbox",
+        label: "Inbox" as const,
         icon: "inbox" as const,
         badge: "23",
+        href: "#",
     },
     {
-        label: "Customers",
+        label: "Customers" as const,
         icon: "customers" as const,
+        href: "/customers",
     },
     {
-        label: "Tasks",
+        label: "Tasks" as const,
         icon: "tasks" as const,
+        href: "#",
     },
     {
-        label: "Pipeline",
+        label: "Pipeline" as const,
         icon: "pipeline" as const,
+        href: "#",
     },
     {
-        label: "Cases",
+        label: "Cases" as const,
         icon: "cases" as const,
+        href: "#",
     },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({
+                                    activeItem = "Dashboard",
+                                }: SidebarProps) {
     return (
         <aside className="sticky top-0 hidden h-screen flex-col border-r border-[#e3e7ef] bg-white px-3 py-5 xl:flex">
             <div className="flex items-center gap-2 px-2">
@@ -48,30 +68,40 @@ export default function Sidebar() {
             </div>
 
             <nav className="mt-6 space-y-1.5">
-                {navigation.map((item) => (
-                    <button
-                        key={item.label}
-                        type="button"
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
-                            item.active
-                                ? "bg-[#4f6eff] text-white shadow-[0_8px_18px_rgba(79,110,255,0.28)]"
-                                : "text-[#66708a] hover:bg-[#f5f7fc] hover:text-[#202534]"
-                        }`}
-                    >
-                        <Icon
-                            name={item.icon}
-                            className="h-[17px] w-[17px]"
-                        />
+                {navigation.map((item) => {
+                    const active = activeItem === item.label;
 
-                        <span>{item.label}</span>
+                    return (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
+                                active
+                                    ? "bg-[#4f6eff] text-white shadow-[0_8px_18px_rgba(79,110,255,0.28)]"
+                                    : "text-[#66708a] hover:bg-[#f5f7fc] hover:text-[#202534]"
+                            }`}
+                        >
+                            <Icon
+                                name={item.icon}
+                                className="h-[17px] w-[17px]"
+                            />
 
-                        {item.badge && (
-                            <span className="ml-auto rounded-full bg-[#eef0f5] px-2 py-0.5 text-[11px] font-semibold text-[#606980]">
-                {item.badge}
-              </span>
-                        )}
-                    </button>
-                ))}
+                            <span>{item.label}</span>
+
+                            {item.badge && (
+                                <span
+                                    className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                        active
+                                            ? "bg-white/20 text-white"
+                                            : "bg-[#eef0f5] text-[#606980]"
+                                    }`}
+                                >
+                  {item.badge}
+                </span>
+                            )}
+                        </Link>
+                    );
+                })}
             </nav>
 
             <div className="mt-auto rounded-2xl bg-[#f4efff] p-4">
@@ -87,8 +117,7 @@ export default function Sidebar() {
                 </h3>
 
                 <p className="mt-1 text-xs leading-5 text-[#717a92]">
-                    Unlock advanced analytics, custom
-                    reports, &amp; more.
+                    Unlock advanced analytics, custom reports, &amp; more.
                 </p>
 
                 <button
