@@ -1,118 +1,80 @@
-import DateRangeSelector from "./date-range-selector";
+import Icon from "./icon";
 
-import type {
-    DashboardDateRange,
-    DashboardRole,
-} from "../types/dashboard.types";
+function HeaderAction({
+                          icon,
+                          badge,
+                      }: {
+    icon: "plus" | "bell" | "chat";
+    badge?: number;
+}) {
+    return (
+        <button
+            type="button"
+            className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#e0e5ef] bg-white text-[#65708a]"
+        >
+            <Icon
+                name={icon}
+                className="h-[17px] w-[17px]"
+            />
 
-type TopHeaderProps = {
-    dateRange: DashboardDateRange;
-    onDateRangeChange: (
-        range: DashboardDateRange
-    ) => void;
-
-    customStart: string;
-    customEnd: string;
-
-    onCustomStartChange: (
-        value: string
-    ) => void;
-
-    onCustomEndChange: (
-        value: string
-    ) => void;
-
-    userName: string;
-    role: DashboardRole;
-};
-
-function getInitials(name: string) {
-    return name
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase();
+            {badge ? (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e83d63] px-1 text-[9px] font-bold text-white">
+          {badge}
+        </span>
+            ) : null}
+        </button>
+    );
 }
 
-export default function TopHeader({
-                                      dateRange,
-                                      onDateRangeChange,
-                                      customStart,
-                                      customEnd,
-                                      onCustomStartChange,
-                                      onCustomEndChange,
-                                      userName,
-                                      role,
-                                  }: TopHeaderProps) {
+export default function TopHeader() {
     return (
-        <header className="border-b border-pulse-line bg-white">
-            <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between xl:px-8">
-                <div className="flex min-w-0 flex-1 items-center gap-4">
-                    <div className="shrink-0 lg:hidden">
-                        <h1 className="text-lg font-bold text-pulse-ink">
-                            Pulse
-                            <span className="text-pulse-teal">
-                CRM
-              </span>
-                        </h1>
-                    </div>
+        <div className="flex items-center justify-between gap-5">
+            <label className="flex h-10 w-full max-w-[360px] items-center gap-2 rounded-xl border border-[#e0e5ef] bg-white px-4 text-[#8b94aa]">
+                <Icon
+                    name="search"
+                    className="h-4 w-4"
+                />
 
-                    <div className="w-full max-w-md">
-                        <input
-                            type="search"
-                            placeholder="Search customers, leads, tasks..."
-                            aria-label="Search PulseCRM"
-                            className="w-full rounded-lg border border-pulse-line bg-white px-4 py-2.5 text-sm outline-none transition placeholder:text-pulse-muted focus:border-pulse-teal"
-                        />
-                    </div>
-                </div>
+                <input
+                    type="search"
+                    placeholder="Search anything..."
+                    className="w-full bg-transparent text-sm text-[#252a39] outline-none placeholder:text-[#9aa2b6]"
+                />
+            </label>
 
-                <div className="flex flex-wrap items-center gap-3">
-                    <DateRangeSelector
-                        value={dateRange}
-                        onChange={onDateRangeChange}
-                        customStart={customStart}
-                        customEnd={customEnd}
-                        onCustomStartChange={
-                            onCustomStartChange
-                        }
-                        onCustomEndChange={
-                            onCustomEndChange
-                        }
+            <div className="flex items-center gap-3">
+                <HeaderAction icon="plus" />
+
+                <HeaderAction
+                    icon="bell"
+                    badge={3}
+                />
+
+                <HeaderAction
+                    icon="chat"
+                    badge={3}
+                />
+
+                <div className="ml-1 flex items-center gap-2.5">
+                    <div
+                        className="h-10 w-10 rounded-full"
+                        style={{
+                            background:
+                                "linear-gradient(135deg,#f297c4,#755cff)",
+                        }}
                     />
 
-                    <button
-                        type="button"
-                        aria-label="Notifications"
-                        className="relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-pulse-wash"
-                    >
-            <span aria-hidden="true">
-              🔔
-            </span>
+                    <div className="hidden leading-tight sm:block">
+                        <p className="text-xs font-bold text-[#232836]">
+                            David Miller
+                        </p>
 
-                        <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white">
-              3
-            </span>
-                    </button>
-
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pulse-teal text-sm font-semibold text-white">
-                            {getInitials(userName)}
-                        </div>
-
-                        <div className="hidden sm:block">
-                            <p className="text-sm font-semibold text-pulse-ink">
-                                {userName}
-                            </p>
-
-                            <p className="max-w-44 truncate text-xs text-pulse-muted">
-                                {role}
-                            </p>
-                        </div>
+                        <p className="mt-0.5 text-[10px] text-[#8992a9]">
+                            Admin
+                        </p>
                     </div>
                 </div>
             </div>
-        </header>
+        </div>
     );
 }
