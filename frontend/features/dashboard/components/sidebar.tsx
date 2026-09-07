@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import Icon from "./icon";
 
 type SidebarItem =
@@ -33,7 +33,7 @@ const navigation = [
     {
         label: "Tasks" as const,
         icon: "tasks" as const,
-        href: "#",
+        href: "/tasks",
     },
     {
         label: "Pipeline" as const,
@@ -48,8 +48,8 @@ const navigation = [
 ];
 
 export default function Sidebar({
-                                    activeItem = "Dashboard",
-                                }: SidebarProps) {
+    activeItem = "Dashboard",
+}: SidebarProps) {
     return (
         <aside className="sticky top-0 hidden h-screen flex-col border-r border-[#e3e7ef] bg-white px-3 py-5 xl:flex">
             <div className="flex items-center gap-2 px-2">
@@ -63,13 +63,14 @@ export default function Sidebar({
                 </div>
 
                 <span className="text-[18px] font-extrabold tracking-[-0.03em] text-[#1d2230]">
-          PulseCRM
-        </span>
+                    PulseCRM
+                </span>
             </div>
 
             <nav className="mt-6 space-y-1.5">
                 {navigation.map((item) => {
-                    const active = activeItem === item.label;
+                    const active =
+                        activeItem === item.label;
 
                     return (
                         <Link
@@ -86,9 +87,12 @@ export default function Sidebar({
                                 className="h-[17px] w-[17px]"
                             />
 
-                            <span>{item.label}</span>
+                            <span>
+                                {item.label}
+                            </span>
 
-                            {item.badge && (
+                            {"badge" in item &&
+                            item.badge ? (
                                 <span
                                     className={`ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                                         active
@@ -96,9 +100,9 @@ export default function Sidebar({
                                             : "bg-[#eef0f5] text-[#606980]"
                                     }`}
                                 >
-                  {item.badge}
-                </span>
-                            )}
+                                    {item.badge}
+                                </span>
+                            ) : null}
                         </Link>
                     );
                 })}
@@ -117,7 +121,8 @@ export default function Sidebar({
                 </h3>
 
                 <p className="mt-1 text-xs leading-5 text-[#717a92]">
-                    Unlock advanced analytics, custom reports, &amp; more.
+                    Unlock advanced analytics,
+                    custom reports, &amp; more.
                 </p>
 
                 <button
